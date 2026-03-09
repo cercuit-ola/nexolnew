@@ -1,0 +1,10 @@
+/* Nav link responsive visibility */
+.nav-link-item {
+  display: none !important;
+}
+
+@media (min-width: 640px) {
+  .nav-link-item {
+    display: block !important;
+  }
+}
