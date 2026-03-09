@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>NexolPay — Redeem. Convert. Move.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ───────────────────────────────────────
+   TOKENS
+─────────────────────────────────────── */
+:root {
+  --g0: #F2FDF8;
+  --g1: #E6FAF0;
+  --g2: #C8F5E2;
+  --mint: #00D98B;
+  --mint-b: #00B674;
+  --mint-d: #008F5A;
+  --mint-glow: rgba(0,217,139,0.22);
+  --mint-soft: rgba(0,217,139,0.09);
+  --mint-line: rgba(0,182,116,0.18);
+  --ink: #061C14;
+  --ink2: #0D2E1F;
+  --slate: #2E5040;
+  --mid: #5A8070;
+  --muted: #92ADA0;
+  --dim: #C4D8CF;
+  --white: #FFFFFF;
+  --card: rgba(255,255,255,0.72);
+  --card-border: rgba(0,182,116,0.15);
+  --shadow: 0 8px 48px rgba(0,100,60,0.1);
+  --shadow-l: 0 24px 80px rgba(0,100,60,0.14);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; font-size:16px; }
+
+body {
+  font-family:'DM Sans',sans-serif;
+  background:var(--g0);
+  color:var(--ink);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+
+/* ── NOISE TEXTURE OVERLAY ── */
+body::before {
+  content:'';
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-size:256px;
+  mix-blend-mode:multiply;
+  opacity:0.5;
+}
+
+/* ── AMBIENT BG BLOBS ── */
+.blob {
+  position:fixed; border-radius:50%; pointer-events:none; z-index:0;
+  filter:blur(80px); opacity:0.35;
+}
+.blob1 { width:500px; height:500px; background:radial-gradient(circle,#00D98B,transparent 65%); top:-150px; right:-100px; animation:driftA 18s ease-in-out infinite; }
+.blob2 { width:400px; height:400px; background:radial-gradient(circle,#00B674,transparent 65%); bottom:10%; left:-100px; animation:driftB 22s ease-in-out infinite; }
+.blob3 { width:300px; height:300px; background:radial-gradient(circle,#00D98B,transparent 65%); top:50%; left:50%; transform:translate(-50%,-50%); animation:driftC 15s ease-in-out infinite; opacity:0.15; }
+
+@keyframes driftA { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(-40px,60px) scale(1.1)} 66%{transform:translate(30px,-30px) scale(0.95)} }
+@keyframes driftB { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(50px,-40px) scale(1.08)} }
+@keyframes driftC { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.3)} }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:3px; }
+::-webkit-scrollbar-track { background:var(--g0); }
+::-webkit-scrollbar-thumb { background:var(--mint); border-radius:2px; }
+
+/* ── ALL CONTENT Z-INDEX ── */
+nav, section, footer, .hero-wrap { position:relative; z-index:1; }
+
+/* ───────────────────────────────────────
+   NAV
+─────────────────────────────────────── */
+nav {
+  position:fixed; top:0; left:0; right:0; z-index:200;
+  height:64px;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px;
+  background:rgba(242,253,248,0.82);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid transparent;
+  transition:border-color 0.4s;
+}
+nav.stuck { border-bottom-color:var(--mint-line); }
+
+.logo {
+  font-family:'Syne',sans-serif; font-size:20px; font-weight:800;
+  color:var(--ink); text-decoration:none; letter-spacing:-0.5px;
+  display:flex; align-items:center; gap:2px;
+}
+.logo-n {
+  width:32px; height:32px; border-radius:10px;
+  background:linear-gradient(135deg,var(--mint),var(--mint-b));
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Syne',sans-serif; font-size:16px; font-weight:800; color:#fff;
+  margin-right:6px;
+  box-shadow:0 4px 16px var(--mint-glow);
+}
+
+.nav-r { display:flex; align-items:center; gap:10px; }
+
+.nav-link {
+  font-size:13px; font-weight:500; color:var(--slate);
+  text-decoration:none; padding:6px 12px; border-radius:100px;
+  transition:all 0.2s; display:none;
+}
+@media(min-width:640px){ .nav-link { display:block; } }
+.nav-link:hover { background:var(--mint-soft); color:var(--mint-d); }
+
+.nav-cta {
+  padding:9px 20px; border-radius:100px;
+  background:var(--mint); color:var(--ink);
+  font-family:'Syne',sans-serif; font-size:13px; font-weight:700;
+  text-decoration:none; letter-spacing:0.3px;
+  box-shadow:0 4px 20px var(--mint-glow);
+  transition:all 0.25s;
+}
+.nav-cta:hover { background:var(--mint-b); transform:translateY(-1px); }
+
+/* ───────────────────────────────────────
+   HERO
+─────────────────────────────────────── */
+.hero {
+  min-height:100svh;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:100px 20px 60px;
+  text-align:center;
+}
+
+/* Animated grid lines */
+.hero-grid {
+  position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden;
+}
+.hg-line {
+  position:absolute; background:rgba(0,182,116,0.06);
+}
+.hg-h { width:100%; height:1px; }
+.hg-v { height:100%; width:1px; }
+
+.hero-eyebrow {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:6px 16px; border-radius:100px;
+  background:var(--mint-soft); border:1px solid var(--mint-line);
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; font-weight:600; color:var(--mint-d);
+  letter-spacing:2px; text-transform:uppercase;
+  margin-bottom:24px;
+  animation:fadeUp 0.7s ease both;
+}
+.ew-dot { width:6px; height:6px; border-radius:50%; background:var(--mint); animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+
+.hero-h1 {
+  font-family:'Syne',sans-serif;
+  font-size:clamp(40px,10vw,72px);
+  font-weight:800; line-height:1.04;
+  letter-spacing:-2.5px; color:var(--ink);
+  margin-bottom:20px;
+  animation:fadeUp 0.7s 0.1s ease both;
+}
+.hero-h1 .hl {
+  background:linear-gradient(135deg,var(--mint-b),var(--mint));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.hero-sub {
+  font-size:clamp(15px,3.5vw,18px); font-weight:300; color:var(--slate);
+  line-height:1.75; max-width:520px; margin:0 auto 36px;
+  animation:fadeUp 0.7s 0.2s ease both;
+}
+.hero-sub strong { color:var(--ink); font-weight:500; }
+
+.hero-btns {
+  display:flex; flex-wrap:wrap; gap:12px; justify-content:center;
+  margin-bottom:48px;
+  animation:fadeUp 0.7s 0.3s ease both;
+}
+
+.btn-primary {
+  padding:15px 30px; border-radius:100px;
+  background:linear-gradient(135deg,var(--mint),var(--mint-b));
+  color:#fff; font-family:'Syne',sans-serif; font-size:15px; font-weight:700;
+  text-decoration:none; letter-spacing:0.3px;
+  box-shadow:0 8px 32px var(--mint-glow), 0 2px 0 rgba(255,255,255,0.3) inset;
+  transition:all 0.25s; display:inline-flex; align-items:center; gap:8px;
+}
+.btn-primary:hover { transform:translateY(-3px); box-shadow:0 14px 48px var(--mint-glow); }
+
+.btn-outline {
+  padding:15px 28px; border-radius:100px;
+  background:rgba(255,255,255,0.7); color:var(--mint-d);
+  border:1.5px solid var(--mint-line);
+  font-family:'Syne',sans-serif; font-size:15px; font-weight:600;
+  text-decoration:none; backdrop-filter:blur(8px);
+  transition:all 0.25s;
+}
+.btn-outline:hover { background:var(--white); border-color:var(--mint); }
+
+/* TRUST ROW */
+.trust-row {
+  display:flex; align-items:center; justify-content:center; gap:16px;
+  flex-wrap:wrap; animation:fadeUp 0.7s 0.4s ease both;
+}
+.trust-item { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); }
+.trust-sep { width:4px; height:4px; border-radius:50%; background:var(--dim); }
+
+/* HERO PHONE STACK */
+.hero-phones {
+  margin-top:60px; position:relative; height:360px;
+  display:flex; justify-content:center; align-items:flex-end;
+  animation:fadeUp 0.9s 0.2s ease both;
+}
+
+.phone-card {
+  width:200px;
+  background:linear-gradient(160deg,#0C2E20,#061C14);
+  border-radius:32px;
+  border:1px solid rgba(0,217,139,0.18);
+  overflow:hidden; flex-shrink:0;
+  box-shadow: 0 40px 80px rgba(6,28,20,0.35), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.phone-card.center {
+  width:220px; z-index:3;
+  box-shadow: 0 50px 100px rgba(6,28,20,0.4), 0 0 0 1px rgba(0,217,139,0.2), 0 0 60px rgba(0,217,139,0.1), inset 0 1px 0 rgba(255,255,255,0.1);
+  transform:translateY(-20px);
+  animation:floatMain 7s ease-in-out infinite;
+}
+.phone-card.left {
+  width:190px; z-index:2; transform:translateX(30px) rotate(-4deg);
+  animation:floatLeft 8s ease-in-out infinite;
+}
+.phone-card.right {
+  width:190px; z-index:2; transform:translateX(-30px) rotate(4deg);
+  animation:floatRight 9s ease-in-out infinite;
+}
+
+@keyframes floatMain { 0%,100%{transform:translateY(-20px)} 50%{transform:translateY(-34px)} }
+@keyframes floatLeft { 0%,100%{transform:translateX(30px) rotate(-4deg)} 50%{transform:translateX(30px) rotate(-4deg) translateY(-10px)} }
+@keyframes floatRight { 0%,100%{transform:translateX(-30px) rotate(4deg)} 50%{transform:translateX(-30px) rotate(4deg) translateY(-8px)} }
+
+.phone-glow {
+  position:absolute; bottom:-20px; left:50%; transform:translateX(-50%);
+  width:280px; height:60px;
+  background:radial-gradient(ellipse,rgba(0,217,139,0.3),transparent 70%);
+  filter:blur(20px); pointer-events:none; z-index:1;
+}
+
+/* Phone inner content */
+.p-notch { width:80px; height:22px; background:#020D0A; border-radius:0 0 14px 14px; margin:8px auto 0; }
+.p-screen { padding:10px 12px 16px; }
+.p-status { display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:8px; color:rgba(255,255,255,0.35); margin-bottom:10px; }
+
+/* Card A: Dashboard */
+.pa-bal-lbl { font-size:7px; letter-spacing:2px; text-transform:uppercase; color:rgba(0,217,139,0.6); font-family:'JetBrains Mono',monospace; }
+.pa-bal { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--mint); letter-spacing:-1px; line-height:1; margin:3px 0; }
+.pa-sub { font-size:7px; color:rgba(255,255,255,0.35); margin-bottom:10px; }
+.pa-wallets { display:flex; gap:6px; margin-bottom:10px; }
+.pa-wallet { flex:1; padding:6px 8px; background:rgba(0,217,139,0.08); border:1px solid rgba(0,217,139,0.12); border-radius:8px; }
+.pa-wlbl { font-size:6px; color:rgba(255,255,255,0.35); font-family:'JetBrains Mono',monospace; letter-spacing:1px; }
+.pa-wval { font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700; color:rgba(255,255,255,0.8); margin-top:2px; }
+.pa-actions { display:flex; gap:6px; margin-bottom:10px; }
+.pa-action { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; }
+.pa-action-ico { width:26px; height:26px; border-radius:8px; background:rgba(0,217,139,0.1); border:1px solid rgba(0,217,139,0.2); display:flex; align-items:center; justify-content:center; font-size:11px; }
+.pa-action-lbl { font-size:6px; color:rgba(255,255,255,0.4); text-align:center; }
+.pa-tx { display:flex; align-items:center; justify-content:space-between; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+.pa-tx:last-child { border-bottom:none; }
+.pa-tx-name { font-size:8px; color:rgba(255,255,255,0.6); }
+.pa-tx-amt { font-family:'JetBrains Mono',monospace; font-size:8px; font-weight:600; }
+.pa-tx-amt.pos { color:var(--mint); }
+.pa-tx-amt.neg { color:rgba(255,80,80,0.8); }
+
+/* Card B: Gift Cards */
+.pb-title { font-family:'Syne',sans-serif; font-size:11px; font-weight:700; color:#fff; text-align:center; margin-bottom:8px; }
+.pb-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.pb-card { border-radius:8px; overflow:hidden; }
+.pb-card-inner { padding:8px; display:flex; flex-direction:column; justify-content:flex-end; height:52px; }
+.amazon-bg { background:linear-gradient(135deg,#FF9900,#F90); }
+.apple-bg { background:linear-gradient(135deg,#1d1d1f,#3a3a3a); }
+.gplay-bg { background:linear-gradient(135deg,#01875f,#34A853); }
+.netflix-bg { background:linear-gradient(135deg,#E50914,#B20710); }
+.pb-brand { font-family:'Syne',sans-serif; font-size:7px; font-weight:700; color:rgba(255,255,255,0.9); }
+.pb-rate { font-family:'JetBrains Mono',monospace; font-size:6px; color:rgba(255,255,255,0.6); margin-top:1px; }
+
+/* Card C: Vault */
+.pc-title { font-family:'Syne',sans-serif; font-size:10px; font-weight:700; color:#fff; margin-bottom:8px; }
+.pc-opts { display:flex; flex-direction:column; gap:5px; }
+.pc-opt { padding:7px 8px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; }
+.pc-opt.a { background:rgba(0,217,139,0.12); border:1px solid rgba(0,217,139,0.25); }
+.pc-opt.b { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); }
+.pc-opt-name { font-size:7px; font-weight:500; }
+.pc-opt-name.a { color:#fff; }
+.pc-opt-name.b { color:rgba(255,255,255,0.4); }
+.pc-opt-val { font-family:'JetBrains Mono',monospace; font-size:8px; font-weight:700; }
+.pc-opt-val.a { color:var(--mint); }
+.pc-opt-val.b { color:rgba(255,255,255,0.2); }
+.pc-yield { padding:6px 8px; border-radius:8px; background:linear-gradient(135deg,rgba(0,217,139,0.08),rgba(0,182,116,0.04)); border:1px solid rgba(0,217,139,0.15); margin-top:6px; font-size:7px; color:var(--mint); }
+.pc-yield strong { font-family:'JetBrains Mono',monospace; }
+
+/* ───────────────────────────────────────
+   STATS TICKER
+─────────────────────────────────────── */
+.ticker-wrap {
+  overflow:hidden; padding:16px 0;
+  border-top:1px solid var(--mint-line); border-bottom:1px solid var(--mint-line);
+  background:rgba(255,255,255,0.5); backdrop-filter:blur(8px);
+}
+.ticker {
+  display:flex; gap:0; white-space:nowrap;
+  animation:ticker 30s linear infinite;
+}
+.ticker:hover { animation-play-state:paused; }
+@keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.tick-item {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:0 32px;
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  border-right:1px solid var(--mint-line);
+}
+.tick-val { font-weight:700; color:var(--mint-d); }
+.tick-lbl { color:var(--muted); }
+.tick-arr { color:var(--mint); }
+
+/* ───────────────────────────────────────
+   SECTION SHARED
+─────────────────────────────────────── */
+.section { padding:80px 20px; }
+.wrap { max-width:480px; margin:0 auto; }
+.wrap-wide { max-width:600px; margin:0 auto; }
+
+.eyebrow {
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px; font-weight:600; color:var(--mint-d);
+  letter-spacing:2.5px; text-transform:uppercase;
+  margin-bottom:16px;
+  padding:4px 12px; border-radius:100px;
+  background:var(--mint-soft); border:1px solid var(--mint-line);
+}
+
+.sh2 {
+  font-family:'Syne',sans-serif;
+  font-size:clamp(30px,7vw,44px);
+  font-weight:800; letter-spacing:-1.5px;
+  line-height:1.07; color:var(--ink);
+  margin-bottom:14px;
+}
+
+.sp {
+  font-size:16px; font-weight:300; color:var(--slate);
+  line-height:1.75;
+}
+
+/* ───────────────────────────────────────
+   STAT CARDS
+─────────────────────────────────────── */
+.stat-cards {
+  display:grid; grid-template-columns:1fr 1fr; gap:12px;
+  margin:48px 0 0;
+}
+.stat-card {
+  background:rgba(255,255,255,0.7); backdrop-filter:blur(12px);
+  border:1px solid var(--card-border);
+  border-radius:20px; padding:24px 20px;
+  box-shadow:var(--shadow);
+  transition:transform 0.3s, box-shadow 0.3s;
+  position:relative; overflow:hidden;
+}
+.stat-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-l); }
+.stat-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg,var(--mint),var(--mint-b));
+  border-radius:20px 20px 0 0;
+}
+.stat-card:nth-child(1) { grid-column:1/-1; }
+.sc-num {
+  font-family:'JetBrains Mono',monospace;
+  font-size:clamp(36px,8vw,48px); font-weight:700;
+  color:var(--mint-d); letter-spacing:-2px; line-height:1; margin-bottom:8px;
+}
+.sc-txt { font-size:13px; color:var(--slate); line-height:1.55; }
+.sc-src { font-size:10px; color:var(--muted); margin-top:6px; font-style:italic; }
+
+/* ───────────────────────────────────────
+   FEATURE CARDS
+─────────────────────────────────────── */
+.feature-cards { display:flex; flex-direction:column; gap:16px; margin-top:48px; }
+
+.feat-card {
+  background:rgba(255,255,255,0.75); backdrop-filter:blur(16px);
+  border:1px solid var(--card-border);
+  border-radius:24px; overflow:hidden;
+  box-shadow:var(--shadow);
+  transition:transform 0.3s, box-shadow 0.3s;
+}
+.feat-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-l); }
+
+.feat-card-top {
+  padding:24px;
+  display:flex; align-items:flex-start; gap:16px;
+}
+
+.feat-ico {
+  width:52px; height:52px; border-radius:16px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:24px; flex-shrink:0;
+  background:linear-gradient(135deg,var(--mint-soft),rgba(0,217,139,0.04));
+  border:1px solid var(--mint-line);
+  box-shadow:0 4px 16px rgba(0,217,139,0.12);
+}
+
+.feat-txt {}
+.feat-num {
+  font-family:'JetBrains Mono',monospace; font-size:9px;
+  color:var(--mint); letter-spacing:2px; text-transform:uppercase; margin-bottom:4px;
+}
+.feat-title {
+  font-family:'Syne',sans-serif; font-size:18px; font-weight:800;
+  color:var(--ink); letter-spacing:-0.5px; line-height:1.2; margin-bottom:8px;
+}
+.feat-body { font-size:14px; color:var(--slate); line-height:1.68; font-weight:300; }
+.feat-body strong { color:var(--ink); font-weight:500; }
+
+.feat-chips {
+  padding:0 24px 20px; display:flex; gap:6px; flex-wrap:wrap;
+}
+.chip {
+  padding:4px 10px; border-radius:7px;
+  font-family:'JetBrains Mono',monospace; font-size:8px; font-weight:600; letter-spacing:0.5px;
+  background:var(--mint-soft); color:var(--mint-d); border:1px solid var(--mint-line);
+}
+
+/* Inline card mockup inside feature */
+.feat-mock {
+  margin:0 20px 20px;
+  background:linear-gradient(135deg,#0C2E20,#061C14);
+  border:1px solid rgba(0,217,139,0.2);
+  border-radius:16px; padding:16px;
+}
+.fm-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+  font-size:12px;
+}
+.fm-row:last-child { border-bottom:none; }
+.fm-k { color:rgba(255,255,255,0.45); }
+.fm-v { font-family:'JetBrains Mono',monospace; font-weight:600; color:rgba(255,255,255,0.9); }
+.fm-v.hi { color:var(--mint); }
+.fm-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:6px 12px; border-radius:100px;
+  background:var(--mint); color:var(--ink);
+  font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700;
+  margin-top:10px;
+}
+
+/* Off-ramp mock */
+.or-flow { display:flex; flex-direction:column; gap:8px; }
+.or-step {
+  display:flex; align-items:center; gap:10px;
+  padding:8px; border-radius:10px;
+}
+.or-step.a { background:rgba(0,217,139,0.08); border:1px solid rgba(0,217,139,0.15); }
+.or-step.b { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); }
+.or-ico { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+.or-ico.usdt { background:rgba(38,161,123,0.15); }
+.or-ico.bank { background:rgba(0,217,139,0.12); }
+.or-info {}
+.or-label { font-size:11px; font-weight:500; color:rgba(255,255,255,0.8); }
+.or-sub { font-size:9px; color:rgba(255,255,255,0.35); }
+.or-amt { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; margin-left:auto; }
+.or-amt.pos { color:var(--mint); }
+.or-arrow { text-align:center; font-size:14px; color:var(--mint); padding:2px 0; }
+
+/* Vault week mock */
+.vault-weeks { display:flex; flex-direction:column; gap:6px; }
+.vw {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:9px 12px; border-radius:10px;
+}
+.vw.live { background:rgba(0,217,139,0.1); border:1px solid rgba(0,217,139,0.22); }
+.vw.lock { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); }
+.vw-left {}
+.vw-lbl { font-size:8px; font-family:'JetBrains Mono',monospace; letter-spacing:1px; }
+.vw-lbl.live { color:var(--mint); }
+.vw-lbl.lock { color:rgba(255,255,255,0.25); }
+.vw-date { font-size:9px; color:rgba(255,255,255,0.45); }
+.vw-date.lock { color:rgba(255,255,255,0.2); }
+.vw-right { display:flex; align-items:center; gap:8px; }
+.vw-amt { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; }
+.vw-amt.live { color:var(--mint); }
+.vw-amt.lock { color:rgba(255,255,255,0.18); }
+.vw-badge { font-size:8px; padding:3px 7px; border-radius:100px; }
+.vw-badge.live { background:rgba(0,217,139,0.15); color:var(--mint); }
+.vw-yield {
+  display:flex; align-items:center; gap:6px;
+  margin-top:8px; padding:8px 12px; border-radius:10px;
+  background:linear-gradient(135deg,rgba(0,217,139,0.07),rgba(0,182,116,0.03));
+  border:1px solid rgba(0,217,139,0.13);
+  font-size:10px; color:var(--mint);
+}
+.vw-yield strong { font-family:'JetBrains Mono',monospace; }
+
+/* ───────────────────────────────────────
+   HOW IT WORKS
+─────────────────────────────────────── */
+.how-section { background:rgba(255,255,255,0.4); backdrop-filter:blur(8px); }
+
+.steps { display:flex; flex-direction:column; gap:0; margin-top:40px; position:relative; }
+.steps::before {
+  content:''; position:absolute; left:20px; top:28px; bottom:28px; width:2px;
+  background:linear-gradient(to bottom, var(--mint), var(--mint-b), var(--mint));
+  border-radius:2px;
+}
+
+.step {
+  display:flex; align-items:flex-start; gap:20px;
+  padding:0 0 32px; position:relative;
+}
+.step:last-child { padding-bottom:0; }
+
+.step-circle {
+  width:42px; height:42px; border-radius:50%; flex-shrink:0;
+  background:var(--g0); border:2px solid var(--mint);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; color:var(--mint-d);
+  box-shadow:0 0 0 6px rgba(0,217,139,0.08), 0 4px 16px rgba(0,217,139,0.2);
+  position:relative; z-index:1;
+}
+
+.step-content { padding-top:10px; }
+.step-title { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; color:var(--ink); margin-bottom:6px; }
+.step-body { font-size:14px; color:var(--slate); line-height:1.65; font-weight:300; }
+
+/* ───────────────────────────────────────
+   CALCULATOR
+─────────────────────────────────────── */
+.calc-section {}
+
+.calc-box {
+  background:rgba(255,255,255,0.75); backdrop-filter:blur(16px);
+  border:1px solid var(--card-border); border-radius:24px; padding:28px;
+  box-shadow:var(--shadow); margin-top:36px;
+}
+.calc-lbl {
+  font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:2px;
+  text-transform:uppercase; color:var(--muted); margin-bottom:12px;
+}
+.calc-input-row {
+  display:flex; border:1.5px solid var(--mint-line); border-radius:14px;
+  overflow:hidden; margin-bottom:24px;
+  transition:border-color 0.25s;
+  background:rgba(255,255,255,0.8);
+}
+.calc-input-row:focus-within { border-color:var(--mint); }
+.calc-sym {
+  padding:12px 16px; font-family:'Syne',sans-serif;
+  font-size:24px; font-weight:800; color:var(--mint-d);
+  background:transparent; border-right:1.5px solid var(--mint-line);
+}
+.calc-inp {
+  flex:1; padding:12px 14px; border:none; outline:none; background:transparent;
+  font-family:'JetBrains Mono',monospace; font-size:24px; font-weight:700; color:var(--ink);
+}
+
+.calc-weeks { display:flex; flex-direction:column; gap:9px; }
+.cw {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; border-radius:14px; transition:all 0.3s;
+}
+.cw.on { background:rgba(0,217,139,0.1); border:1.5px solid rgba(0,217,139,0.25); }
+.cw.off { background:rgba(255,255,255,0.5); border:1.5px solid var(--mint-line); }
+.cw-left { display:flex; align-items:center; gap:10px; }
+.cw-ico { font-size:18px; }
+.cw-title { font-size:13px; font-weight:500; }
+.cw-title.on { color:var(--ink); }
+.cw-title.off { color:var(--muted); }
+.cw-sub { font-size:10px; color:var(--dim); margin-top:1px; }
+.cw-amt { font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:700; }
+.cw-amt.on { color:var(--mint-d); }
+.cw-amt.off { color:var(--dim); }
+.calc-note { text-align:center; font-size:11px; color:var(--muted); margin-top:16px; line-height:1.6; }
+
+/* ───────────────────────────────────────
+   BASE SECTION (dark)
+─────────────────────────────────────── */
+.base-section {
+  background:linear-gradient(160deg,#061C14,#0A2A1A);
+  padding:80px 20px;
+  position:relative; overflow:hidden;
+}
+.base-section::before {
+  content:''; position:absolute; inset:0;
+  background:radial-gradient(ellipse 70% 60% at 50% 0%, rgba(0,217,139,0.08), transparent 60%);
+  pointer-events:none;
+}
+.base-wrap { max-width:480px; margin:0 auto; text-align:center; position:relative; z-index:1; }
+.base-pill {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:7px 18px; border-radius:100px;
+  border:1px solid rgba(0,217,139,0.2); background:rgba(0,217,139,0.06);
+  font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--mint);
+  letter-spacing:2px; text-transform:uppercase; margin-bottom:28px;
+}
+.base-h2 {
+  font-family:'Syne',sans-serif;
+  font-size:clamp(30px,8vw,44px);
+  font-weight:800; letter-spacing:-1.5px;
+  color:#fff; line-height:1.07; margin-bottom:16px;
+}
+.base-sub {
+  font-size:15px; color:rgba(255,255,255,0.45);
+  line-height:1.72; font-weight:300; margin-bottom:48px;
+}
+.base-metrics { display:flex; gap:2px; }
+.bm {
+  flex:1; padding:24px 16px; text-align:center;
+  background:rgba(255,255,255,0.03); border:1px solid rgba(0,217,139,0.08);
+}
+.bm:first-child { border-radius:16px 0 0 16px; }
+.bm:last-child { border-radius:0 16px 16px 0; }
+.bm-val { font-family:'JetBrains Mono',monospace; font-size:28px; font-weight:700; color:var(--mint); letter-spacing:-1px; line-height:1; margin-bottom:6px; }
+.bm-lbl { font-size:10px; color:rgba(255,255,255,0.3); line-height:1.4; }
+
+/* ───────────────────────────────────────
+   PRICING
+─────────────────────────────────────── */
+.price-cards { display:flex; flex-direction:column; gap:16px; margin-top:40px; }
+.price-card {
+  background:rgba(255,255,255,0.75); backdrop-filter:blur(16px);
+  border:1px solid var(--card-border); border-radius:24px; padding:28px;
+  box-shadow:var(--shadow); position:relative;
+  transition:transform 0.3s;
+}
+.price-card:hover { transform:translateY(-4px); }
+.price-card.hot {
+  border-color:var(--mint);
+  box-shadow:0 0 0 1px var(--mint), var(--shadow-l), 0 0 40px rgba(0,217,139,0.12);
+}
+.hot-tag {
+  position:absolute; top:-13px; left:50%; transform:translateX(-50%);
+  background:linear-gradient(90deg,var(--mint),var(--mint-b)); color:var(--ink);
+  font-family:'Syne',sans-serif; font-size:10px; font-weight:700;
+  padding:5px 18px; border-radius:100px; white-space:nowrap; letter-spacing:0.5px;
+}
+.pc-plan { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; }
+.pc-price { font-family:'JetBrains Mono',monospace; font-size:52px; font-weight:700; color:var(--ink); letter-spacing:-3px; line-height:1; margin-bottom:6px; }
+.pc-price sup { font-size:22px; letter-spacing:0; }
+.pc-price .mo { font-size:15px; color:var(--muted); font-weight:400; letter-spacing:0; }
+.pc-desc { font-size:13px; color:var(--slate); margin-bottom:22px; line-height:1.6; }
+.pc-feats { display:flex; flex-direction:column; gap:10px; margin-bottom:28px; }
+.pc-feat { display:flex; align-items:center; gap:10px; font-size:14px; color:var(--slate); }
+.pf-check {
+  width:20px; height:20px; border-radius:50%;
+  background:var(--mint-soft); border:1px solid var(--mint-line);
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; color:var(--mint-d); flex-shrink:0; font-weight:700;
+}
+.pc-btn {
+  display:block; width:100%; padding:14px; border-radius:100px; text-align:center;
+  font-family:'Syne',sans-serif; font-size:14px; font-weight:700;
+  text-decoration:none; transition:all 0.25s; letter-spacing:0.3px;
+}
+.pc-btn.ghost { border:1.5px solid var(--mint-line); color:var(--mint-d); }
+.pc-btn.ghost:hover { background:var(--mint-soft); }
+.pc-btn.fill { background:linear-gradient(135deg,var(--mint),var(--mint-b)); color:var(--ink); box-shadow:0 6px 24px var(--mint-glow); }
+.pc-btn.fill:hover { transform:translateY(-1px); box-shadow:0 10px 36px var(--mint-glow); }
+.pricing-note { font-size:12px; color:var(--muted); text-align:center; margin-top:16px; line-height:1.6; }
+
+/* ───────────────────────────────────────
+   WAITLIST
+─────────────────────────────────────── */
+.wl-section { text-align:center; padding:80px 20px 100px; }
+.wl-wrap { max-width:460px; margin:0 auto; }
+.wl-h2 {
+  font-family:'Syne',sans-serif;
+  font-size:clamp(34px,9vw,56px);
+  font-weight:800; letter-spacing:-2px;
+  line-height:1.03; color:var(--ink); margin-bottom:16px;
+}
+.wl-h2 em { font-style:normal; color:var(--mint-d); }
+.wl-sub { font-size:16px; color:var(--slate); font-weight:300; line-height:1.65; margin-bottom:36px; }
+
+.wl-form-box {
+  background:rgba(255,255,255,0.75); backdrop-filter:blur(16px);
+  border:1.5px solid var(--mint-line); border-radius:20px; padding:20px;
+  box-shadow:var(--shadow); margin-bottom:20px;
+  transition:border-color 0.25s, box-shadow 0.25s;
+}
+.wl-form-box:focus-within {
+  border-color:var(--mint);
+  box-shadow:0 0 0 4px rgba(0,217,139,0.12), var(--shadow);
+}
+.wl-input {
+  width:100%; padding:12px 16px; border:1.5px solid var(--mint-line); border-radius:12px;
+  background:rgba(255,255,255,0.8); color:var(--ink);
+  font-family:'DM Sans',sans-serif; font-size:15px; outline:none;
+  margin-bottom:10px; transition:border-color 0.25s;
+}
+.wl-input:focus { border-color:var(--mint); }
+.wl-input::placeholder { color:var(--muted); }
+.wl-btn {
+  width:100%; padding:15px; border-radius:12px;
+  background:linear-gradient(135deg,var(--mint),var(--mint-b)); color:var(--ink);
+  font-family:'Syne',sans-serif; font-size:15px; font-weight:700;
+  border:none; cursor:pointer; letter-spacing:0.3px;
+  box-shadow:0 6px 24px var(--mint-glow);
+  transition:all 0.25s;
+}
+.wl-btn:hover { transform:translateY(-2px); box-shadow:0 10px 36px var(--mint-glow); }
+
+.trust-pills { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+.trust-pill {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 14px; border-radius:100px;
+  background:rgba(255,255,255,0.6); border:1px solid var(--mint-line);
+  font-size:11px; color:var(--muted);
+  backdrop-filter:blur(8px);
+}
+
+/* ───────────────────────────────────────
+   FOOTER
+─────────────────────────────────────── */
+footer {
+  background:var(--ink2); padding:48px 20px 32px;
+}
+.footer-logo {
+  font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:#fff;
+  display:flex; align-items:center; gap:8px; margin-bottom:8px;
+}
+.fl-n {
+  width:30px; height:30px; border-radius:9px;
+  background:linear-gradient(135deg,var(--mint),var(--mint-b));
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:800; color:#fff;
+}
+.footer-tag { font-size:13px; color:rgba(255,255,255,0.3); margin-bottom:32px; line-height:1.6; }
+.footer-links { display:flex; gap:32px; flex-wrap:wrap; margin-bottom:32px; }
+.footer-col {}
+.fc-title { font-size:10px; font-weight:700; color:rgba(255,255,255,0.25); letter-spacing:2px; text-transform:uppercase; margin-bottom:12px; font-family:'Syne',sans-serif; }
+.footer-col a { display:block; font-size:13px; color:rgba(255,255,255,0.4); text-decoration:none; margin-bottom:8px; transition:color 0.2s; }
+.footer-col a:hover { color:var(--mint); }
+.footer-div { height:1px; background:rgba(255,255,255,0.06); margin-bottom:20px; }
+.footer-bot { display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+.f-copy { font-size:12px; color:rgba(255,255,255,0.2); }
+.f-base { font-family:'JetBrains Mono',monospace; font-size:10px; color:rgba(255,255,255,0.15); }
+.f-base em { font-style:normal; color:var(--mint); }
+
+/* ───────────────────────────────────────
+   ANIMATIONS
+─────────────────────────────────────── */
+@keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+
+.reveal { opacity:0; transform:translateY(28px); transition:opacity 0.65s ease, transform 0.65s ease; }
+.reveal.in { opacity:1; transform:translateY(0); }
+.d1 { transition-delay:0.08s; }
+.d2 { transition-delay:0.16s; }
+.d3 { transition-delay:0.24s; }
+.d4 { transition-delay:0.32s; }
+
+/* ───────────────────────────────────────
+   DESKTOP ADJUSTMENTS
+─────────────────────────────────────── */
+@media(min-width:768px) {
+  .hero { padding:120px 40px 80px; }
+  .hero-h1 { font-size:clamp(52px,7vw,80px); letter-spacing:-3px; }
+  .hero-phones { height:420px; }
+  .phone-card { width:240px; }
+  .phone-card.center { width:260px; }
+  .phone-card.left,.phone-card.right { width:220px; }
+  .section { padding:100px 40px; }
+  .stat-cards { grid-template-columns:1fr 1fr 1fr; }
+  .stat-card:nth-child(1) { grid-column:auto; }
+  .price-cards { flex-direction:row; gap:20px; }
+  .price-card { flex:1; }
+  .wrap { max-width:600px; }
+  .wrap-wide { max-width:720px; }
+  .feature-cards { max-width:640px; margin-left:auto; margin-right:auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- BLOBS -->
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<!-- ── NAV ── -->
+<nav id="nav">
+  <a href="#" class="logo">
+    <div class="logo-n">N</div>
+    NexolPay
+  </a>
+  <div class="nav-r">
+    <a href="#features" class="nav-link">Features</a>
+    <a href="#how" class="nav-link">How It Works</a>
+    <a href="#pricing" class="nav-link">Pricing</a>
+    <a href="#waitlist" class="nav-cta">Get Early Access</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero" id="top">
+  <!-- grid lines -->
+  <div class="hero-grid" aria-hidden="true">
+    <div class="hg-line hg-h" style="top:20%"></div>
+    <div class="hg-line hg-h" style="top:40%"></div>
+    <div class="hg-line hg-h" style="top:60%"></div>
+    <div class="hg-line hg-h" style="top:80%"></div>
+    <div class="hg-line hg-v" style="left:25%"></div>
+    <div class="hg-line hg-v" style="left:50%"></div>
+    <div class="hg-line hg-v" style="left:75%"></div>
+  </div>
+
+  <div class="hero-eyebrow">
+    <span class="ew-dot"></span>
+    Financial Infrastructure · West Africa
+  </div>
+
+  <h1 class="hero-h1">
+    Redeem.<br>
+    Convert.<br>
+    <span class="hl">Move.</span>
+  </h1>
+
+  <p class="hero-sub">
+    Gift cards to USDT in <strong>60 seconds.</strong> Crypto off-ramp to your bank. Income scheduler that <strong>locks your salary</strong> until you earn access to it.
+  </p>
+
+  <div class="hero-btns">
+    <a href="#waitlist" class="btn-primary">Join the Waitlist →</a>
+    <a href="#features" class="btn-outline">See Features</a>
+  </div>
+
+  <div class="trust-row">
+    <div class="trust-item">⚡ 60s redemption</div>
+    <div class="trust-sep"></div>
+    <div class="trust-item">🔒 Hard-lock savings</div>
+    <div class="trust-sep"></div>
+    <div class="trust-item">🌍 Built for Africa</div>
+  </div>
+
+  <!-- Phone Stack -->
+  <div class="hero-phones">
+    <!-- Left: Gift Cards -->
+    <div class="phone-card left">
+      <div class="p-notch"></div>
+      <div class="p-screen">
+        <div class="p-status"><span>9:41</span><span>▲▲▲</span></div>
+        <div class="pb-title">Buy Gift Cards</div>
+        <div class="pb-grid">
+          <div class="pb-card">
+            <div class="pb-card-inner amazon-bg">
+              <div class="pb-brand">Amazon</div>
+              <div class="pb-rate">₦1,550 / $1</div>
+            </div>
+          </div>
+          <div class="pb-card">
+            <div class="pb-card-inner apple-bg">
+              <div class="pb-brand">Apple</div>
+              <div class="pb-rate">₦1,520 / $1</div>
+            </div>
+          </div>
+          <div class="pb-card">
+            <div class="pb-card-inner gplay-bg">
+              <div class="pb-brand">Google Play</div>
+              <div class="pb-rate">₦1,480 / $1</div>
+            </div>
+          </div>
+          <div class="pb-card">
+            <div class="pb-card-inner netflix-bg">
+              <div class="pb-brand">Netflix</div>
+              <div class="pb-rate">₦1,500 / $1</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Dashboard -->
+    <div class="phone-card center">
+      <div class="p-notch"></div>
+      <div class="p-screen">
+        <div class="p-status"><span>9:41</span><span>⚡ ▲▲▲</span></div>
+        <div class="pa-bal-lbl">Total Balance</div>
+        <div class="pa-bal">$1,250.00</div>
+        <div class="pa-sub">≈ ₦1,993,750</div>
+        <div class="pa-wallets">
+          <div class="pa-wallet">
+            <div class="pa-wlbl">USDC Wallet</div>
+            <div class="pa-wval">$820.00</div>
+          </div>
+          <div class="pa-wallet">
+            <div class="pa-wlbl">NGN Wallet</div>
+            <div class="pa-wval">₦685,000</div>
+          </div>
+        </div>
+        <div class="pa-actions">
+          <div class="pa-action"><div class="pa-action-ico">⇄</div><div class="pa-action-lbl">Swap</div></div>
+          <div class="pa-action"><div class="pa-action-ico">＋</div><div class="pa-action-lbl">Deposit</div></div>
+          <div class="pa-action"><div class="pa-action-ico">🎁</div><div class="pa-action-lbl">Giftcard</div></div>
+          <div class="pa-action"><div class="pa-action-ico">📋</div><div class="pa-action-lbl">Bills</div></div>
+        </div>
+        <div class="pa-tx"><span class="pa-tx-name">Amazon Giftcard</span><span class="pa-tx-amt pos">+$80.00</span></div>
+        <div class="pa-tx"><span class="pa-tx-name">USDC → NGN</span><span class="pa-tx-amt neg">-$200.00</span></div>
+        <div class="pa-tx"><span class="pa-tx-name">Apple Giftcard</span><span class="pa-tx-amt pos">+$40.00</span></div>
+      </div>
+    </div>
+
+    <!-- Right: Vault -->
+    <div class="phone-card right">
+      <div class="p-notch"></div>
+      <div class="p-screen">
+        <div class="p-status"><span>9:41</span><span>▲▲▲</span></div>
+        <div class="pc-title">NexolPay Vault</div>
+        <div class="pc-opts">
+          <div class="pc-opt a">
+            <div class="pc-opt-name a">Week 1 · Live</div>
+            <div class="pc-opt-val a">$250 ✓</div>
+          </div>
+          <div class="pc-opt b">
+            <div class="pc-opt-name b">Week 2 · Locked</div>
+            <div class="pc-opt-val b">🔒 $250</div>
+          </div>
+          <div class="pc-opt b">
+            <div class="pc-opt-name b">Week 3 · Locked</div>
+            <div class="pc-opt-val b">🔒 $250</div>
+          </div>
+          <div class="pc-opt b">
+            <div class="pc-opt-name b">Week 4 · Locked</div>
+            <div class="pc-opt-val b">🔒 $250</div>
+          </div>
+        </div>
+        <div class="pc-yield">📈 1-year lock earns <strong>6.1% APY</strong> on Base</div>
+      </div>
+    </div>
+
+    <div class="phone-glow"></div>
+  </div>
+</section>
+
+<!-- ── TICKER ── -->
+<div class="ticker-wrap">
+  <div class="ticker" aria-hidden="true">
+    <!-- doubled for seamless loop -->
+    <div class="tick-item"><span class="tick-arr">⬆</span><span class="tick-val">$900M</span><span class="tick-lbl">Nigeria gift card market annually</span></div>
+    <div class="tick-item"><span class="tick-arr">⚡</span><span class="tick-val">60s</span><span class="tick-lbl">automated redemption pipeline</span></div>
+    <div class="tick-item"><span class="tick-arr">⬆</span><span class="tick-val">$400M</span><span class="tick-lbl">monthly P2P crypto volume NG</span></div>
+    <div class="tick-item"><span class="tick-arr">📊</span><span class="tick-val">57%</span><span class="tick-lbl">salary spent in week 1</span></div>
+    <div class="tick-item"><span class="tick-arr">🔒</span><span class="tick-val">6.1%</span><span class="tick-lbl">APY on 1-year vault lock</span></div>
+    <div class="tick-item"><span class="tick-arr">⬇</span><span class="tick-val">$0.001</span><span class="tick-lbl">avg transaction fee on Base</span></div>
+    <div class="tick-item"><span class="tick-arr">⬆</span><span class="tick-val">20%</span><span class="tick-lbl">flat platform redemption fee</span></div>
+    <div class="tick-item"><span class="tick-arr">⚡</span><span class="tick-val">2s</span><span class="tick-lbl">Base L2 block finality</span></div>
+    <!-- duplicate -->
+    <div class="tick-item"><span class="tick-arr">⬆</span><span class="tick-val">$900M</span><span class="tick-lbl">Nigeria gift card market annually</span></div>
+    <div class="tick-item"><span class="tick-arr">⚡</span><span class="tick-val">60s</span><span class="tick-lbl">automated redemption pipeline</span></div>
+    <div class="tick-item"><span class="tick-arr">⬆</span><span class="tick-val">$400M</span><span class="tick-lbl">monthly P2P crypto volume NG</span></div>
+    <div class="tick-item"><span class="tick-arr">📊</span><span class="tick-val">57%</span><span class="tick-lbl">salary spent in week 1</span></div>
+    <div class="tick-item"><span class="tick-arr">🔒</span><span class="tick-val">6.1%</span><span class="tick-lbl">APY on 1-year vault lock</span></div>
+    <div class="tick-item"><span class="tick-arr">⬇</span><span class="tick-val">$0.001</span><span class="tick-lbl">avg transaction fee on Base</span></div>
+    <div class="tick-item"><span class="tick-arr">⬆</span><span class="tick-val">20%</span><span class="tick-lbl">flat platform redemption fee</span></div>
+    <div class="tick-item"><span class="tick-arr">⚡</span><span class="tick-val">2s</span><span class="tick-lbl">Base L2 block finality</span></div>
+  </div>
+</div>
+
+<!-- ── STATS ── -->
+<section class="section" style="padding-top:64px;">
+  <div class="wrap-wide">
+    <div class="reveal">
+      <div class="eyebrow">The Problem</div>
+      <h2 class="sh2">Africa's financial rails are broken. We're fixing them.</h2>
+    </div>
+    <div class="stat-cards">
+      <div class="stat-card reveal d1">
+        <div class="sc-num">$900M</div>
+        <div class="sc-txt">Nigeria's annual gift card market — 73% traded through WhatsApp traders charging 35–50% haircuts with zero protection.</div>
+        <div class="sc-src">Industry estimates, 2024</div>
+      </div>
+      <div class="stat-card reveal d2">
+        <div class="sc-num">57%</div>
+        <div class="sc-txt">of Nigerian salary earners exhaust monthly income in week one — before bills, savings, or emergencies.</div>
+        <div class="sc-src">EFInA Financial Report, 2023</div>
+      </div>
+      <div class="stat-card reveal d3">
+        <div class="sc-num">$400M</div>
+        <div class="sc-txt">monthly P2P crypto volume in Nigeria, with no reliable formal offramp since the 2024 CBN-Binance shutdown.</div>
+        <div class="sc-src">Chainalysis, 2024</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FEATURES ── -->
+<section class="section" id="features">
+  <div class="wrap-wide">
+    <div class="reveal">
+      <div class="eyebrow">Core Features</div>
+      <h2 class="sh2">Three features.<br>One closed loop.</h2>
+      <p class="sp">Gift cards in. USDT credited. Naira in your bank. Salary locked until you've earned it.</p>
+    </div>
+
+    <div class="feature-cards">
+
+      <!-- Feature 01 -->
+      <div class="feat-card reveal">
+        <div class="feat-card-top">
+          <div class="feat-ico">🎁</div>
+          <div class="feat-txt">
+            <div class="feat-num">01 · Gift Card Redemption</div>
+            <div class="feat-title">USDT in<br>60 seconds.</div>
+            <p class="feat-body">Nigeria's $900M gift card market runs through WhatsApp traders charging <strong>35–50% haircuts</strong>. NexolPay automates the entire pipeline — verify, redeem, credit — in under 60 seconds. Transparent <strong>20% fee</strong>. Still better than the streets.</p>
+          </div>
+        </div>
+        <div class="feat-chips">
+          <span class="chip">AMAZON</span>
+          <span class="chip">APPLE</span>
+          <span class="chip">GOOGLE PLAY</span>
+          <span class="chip">NETFLIX</span>
+          <span class="chip">STEAM</span>
+          <span class="chip">AUTO 60s</span>
+        </div>
+        <div class="feat-mock">
+          <div class="fm-row"><span class="fm-k">Amazon Card</span><span class="fm-v">$100.00</span></div>
+          <div class="fm-row"><span class="fm-k">Platform Fee (20%)</span><span class="fm-v" style="color:#ff6b6b">− $20.00</span></div>
+          <div class="fm-row"><span class="fm-k">You Receive</span><span class="fm-v hi">$80.00 USDC</span></div>
+          <div class="fm-row"><span class="fm-k">NGN Equivalent</span><span class="fm-v hi">≈ ₦127,840</span></div>
+          <div class="fm-badge">⚡ Credited in 47 seconds</div>
+        </div>
+      </div>
+
+      <!-- Feature 02 -->
+      <div class="feat-card reveal d1">
+        <div class="feat-card-top">
+          <div class="feat-ico">💸</div>
+          <div class="feat-txt">
+            <div class="feat-num">02 · Crypto Off-Ramp</div>
+            <div class="feat-title">USDT to Naira.<br>Any bank. Minutes.</div>
+            <p class="feat-body">Nigeria's formal offramp <strong>collapsed in 2024</strong> after the CBN-Binance shutdown. We are the institutional-grade replacement. Convert USDC to NGN and receive it in GTBank, Access, Zenith — any account. Live rates. Full receipt. <strong>No P2P risk.</strong></p>
+          </div>
+        </div>
+        <div class="feat-chips">
+          <span class="chip">USDC → NGN</span>
+          <span class="chip">ANY BANK</span>
+          <span class="chip">LIVE RATES</span>
+          <span class="chip">BASE L2</span>
+        </div>
+        <div class="feat-mock">
+          <div class="or-flow">
+            <div class="or-step a">
+              <div class="or-ico usdt">💎</div>
+              <div class="or-info"><div class="or-label">You Send</div><div class="or-sub">NexolPay wallet</div></div>
+              <div class="or-amt">100 USDC</div>
+            </div>
+            <div class="or-arrow">↓</div>
+            <div class="or-step b">
+              <div class="or-ico bank">🏦</div>
+              <div class="or-info"><div class="or-label">GTBank · ****4421</div><div class="or-sub">ETA ~2 minutes</div></div>
+              <div class="or-amt pos">₦159,800</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 03 -->
+      <div class="feat-card reveal d2">
+        <div class="feat-card-top">
+          <div class="feat-ico">🔒</div>
+          <div class="feat-txt">
+            <div class="feat-num">03 · Income Scheduler + Vault</div>
+            <div class="feat-title">Pay yourself.<br>Lock the rest.<br>Earn on the wait.</div>
+            <p class="feat-body">Deposit your salary. Choose your payout rhythm — weekly, monthly, or lock for <strong>6 months or 1 year</strong>. Hard-locked on Base. No early access. No override. And your 6-month and 1-year locks <strong>earn onchain yield via Aave on Base</strong> — passive income for ordinary African salary earners.</p>
+          </div>
+        </div>
+        <div class="feat-chips">
+          <span class="chip">WEEKLY</span>
+          <span class="chip">MONTHLY</span>
+          <span class="chip">6M · 4.2% APY</span>
+          <span class="chip">1YR · 6.1% APY</span>
+          <span class="chip">HARD LOCK</span>
+        </div>
+        <div class="feat-mock">
+          <div class="vault-weeks">
+            <div class="vw live"><div class="vw-left"><div class="vw-lbl live">WEEK 1 · JAN 6</div><div class="vw-date">Available now</div></div><div class="vw-right"><span class="vw-amt live">$250</span><span class="vw-badge live">LIVE</span></div></div>
+            <div class="vw lock"><div class="vw-left"><div class="vw-lbl lock">WEEK 2 · JAN 13</div><div class="vw-date lock">Unlocks Monday</div></div><div class="vw-right"><span class="vw-amt lock">$250</span><span style="font-size:12px">🔒</span></div></div>
+            <div class="vw lock"><div class="vw-left"><div class="vw-lbl lock">WEEK 3 · JAN 20</div><div class="vw-date lock">Unlocks in 2 weeks</div></div><div class="vw-right"><span class="vw-amt lock">$250</span><span style="font-size:12px">🔒</span></div></div>
+            <div class="vw lock"><div class="vw-left"><div class="vw-lbl lock">WEEK 4 · JAN 27</div><div class="vw-date lock">Unlocks in 3 weeks</div></div><div class="vw-right"><span class="vw-amt lock">$250</span><span style="font-size:12px">🔒</span></div></div>
+          </div>
+          <div class="vw-yield">📈 6-month: <strong>4.2% APY</strong> · 1-year: <strong>6.1% APY</strong> on Base</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="section how-section" id="how">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">Process</div>
+      <h2 class="sh2">Simple enough to start today.</h2>
+      <p class="sp">Four steps. Fully automated after setup.</p>
+    </div>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-circle">01</div>
+        <div class="step-content">
+          <div class="step-title">Create your account</div>
+          <div class="step-body">Sign up with your phone number, complete KYC with BVN/NIN. Your embedded Base wallet is created automatically — no seed phrase required.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-circle">02</div>
+        <div class="step-content">
+          <div class="step-title">Deposit or redeem</div>
+          <div class="step-body">Add USDC directly or upload an Amazon / Apple gift card. Automated pipeline verifies and credits your wallet in under 60 seconds.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-circle">03</div>
+        <div class="step-content">
+          <div class="step-title">Schedule your money</div>
+          <div class="step-body">Choose your payout rhythm. Weekly allowances, monthly, 6-month or 1-year vault lock. Funds are hard-locked on Base — mathematically unavailable until your date.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-circle">04</div>
+        <div class="step-content">
+          <div class="step-title">Receive automatically</div>
+          <div class="step-body">Every Monday your allowance unlocks. Longer locks earn yield. Off-ramp to your Naira bank account anytime. You just live your life.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CALCULATOR ── -->
+<section class="section calc-section">
+  <div class="wrap">
+    <div class="reveal">
+      <div class="eyebrow">Income Scheduler</div>
+      <h2 class="sh2">The only budget that enforces itself.</h2>
+      <p class="sp">Type your monthly income. See exactly what unlocks each Monday. Zero willpower required.</p>
+    </div>
+    <div class="calc-box reveal d1">
+      <div class="calc-lbl">My monthly income is</div>
+      <div class="calc-input-row">
+        <div class="calc-sym">$</div>
+        <input class="calc-inp" type="number" id="calcVal" value="1000" min="10" placeholder="1000">
+      </div>
+      <div class="calc-weeks">
+        <div class="cw on"><div class="cw-left"><span class="cw-ico">✅</span><div><div class="cw-title on">Week 1 — Unlocked</div><div class="cw-sub">Available Monday</div></div></div><div class="cw-amt on" id="w1">$250</div></div>
+        <div class="cw off"><div class="cw-left"><span class="cw-ico">🔒</span><div><div class="cw-title off">Week 2</div><div class="cw-sub">Unlocks next Monday</div></div></div><div class="cw-amt off" id="w2">$250</div></div>
+        <div class="cw off"><div class="cw-left"><span class="cw-ico">🔒</span><div><div class="cw-title off">Week 3</div><div class="cw-sub">Unlocks in 2 weeks</div></div></div><div class="cw-amt off" id="w3">$250</div></div>
+        <div class="cw off"><div class="cw-left"><span class="cw-ico">🔒</span><div><div class="cw-title off">Week 4</div><div class="cw-sub">Unlocks in 3 weeks</div></div></div><div class="cw-amt off" id="w4">$250</div></div>
+      </div>
+      <div class="calc-note">6-month lock earns <strong style="color:var(--mint-d)">4.2% APY</strong> · 1-year lock earns <strong style="color:var(--mint-d)">6.1% APY</strong> via Aave on Base</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── BASE ── -->
+<section class="base-section">
+  <div class="base-wrap reveal">
+    <div class="base-pill">⬡ Powered by Base · Coinbase L2</div>
+    <h2 class="base-h2">Institutional infrastructure.<br>Consumer simplicity.</h2>
+    <p class="base-sub">Every transaction — redemptions, off-ramps, vault locks, yield payouts — settles on Base. $0.001 fees. 2-second finality. Your users never see a seed phrase.</p>
+    <div class="base-metrics">
+      <div class="bm"><div class="bm-val">$0.001</div><div class="bm-lbl">Avg tx fee on Base</div></div>
+      <div class="bm"><div class="bm-val">2s</div><div class="bm-lbl">Block finality</div></div>
+      <div class="bm"><div class="bm-val">6.1%</div><div class="bm-lbl">APY 1-yr vault</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── PRICING ── -->
+<section class="section" id="pricing">
+  <div class="wrap-wide">
+    <div class="reveal" style="text-align:center">
+      <div class="eyebrow" style="justify-content:center">Pricing</div>
+      <h2 class="sh2">Straightforward.<br>No hidden fees.</h2>
+    </div>
+    <div class="price-cards">
+      <div class="price-card reveal">
+        <div class="pc-plan">Free</div>
+        <div class="pc-price"><sup>$</sup>0<span class="mo">/mo</span></div>
+        <div class="pc-desc">Start building better financial habits today.</div>
+        <div class="pc-feats">
+          <div class="pc-feat"><div class="pf-check">✓</div>Weekly income scheduling</div>
+          <div class="pc-feat"><div class="pf-check">✓</div>1 active savings vault</div>
+          <div class="pc-feat"><div class="pf-check">✓</div>Basic USDC off-ramp</div>
+          <div class="pc-feat"><div class="pf-check">✓</div>Transaction history</div>
+        </div>
+        <a href="#waitlist" class="pc-btn ghost">Get Started Free</a>
+      </div>
+      <div class="price-card hot reveal d1">
+        <div class="hot-tag">Most Popular</div>
+        <div class="pc-plan">Pro</div>
+        <div class="pc-price"><sup>$</sup>3<span class="mo">/mo</span></div>
+        <div class="pc-desc">The full NexolPay experience. Every feature unlocked.</div>
+        <div class="pc-feats">
+          <div class="pc-feat"><div class="pf-check">✓</div>Unlimited savings vaults</div>
+          <div class="pc-feat"><div class="pf-check">✓</div>Gift card redemption (Amazon + Apple)</div>
+          <div class="pc-feat"><div class="pf-check">✓</div>Virtual spend card</div>
+          <div class="pc-feat"><div class="pf-check">✓</div>6-month vault · 4.2% APY yield</div>
+          <div class="pc-feat"><div class="pf-check">✓</div>1-year vault · 6.1% APY yield</div>
+          <div class="pc-feat"><div class="pf-check">✓</div>Priority off-ramp payouts</div>
+        </div>
+        <a href="#waitlist" class="pc-btn fill">Join Waitlist →</a>
+      </div>
+    </div>
+    <p class="pricing-note">Gift card redemptions charged at 20% per transaction on all plans.<br>Yield powered by Aave on Base L2.</p>
+  </div>
+</section>
+
+<!-- ── WAITLIST ── -->
+<section class="wl-section" id="waitlist">
+  <div class="wl-wrap reveal">
+    <div class="eyebrow" style="justify-content:center;margin-bottom:24px">Early Access</div>
+    <h2 class="wl-h2">Your salary.<br>Finally working<br><em>for you.</em></h2>
+    <p class="wl-sub">Be among the first when NexolPay launches in Lagos. No spam. Just your spot in line.</p>
+    <div class="wl-form-box">
+      <input class="wl-input" type="email" id="wlMail" placeholder="your@email.com">
+      <button class="wl-btn" id="wlBtn" onclick="joinWL()">Get Early Access →</button>
+    </div>
+    <div class="trust-pills">
+      <div class="trust-pill">🔒 Encrypted</div>
+      <div class="trust-pill">🌍 Built for Africa</div>
+      <div class="trust-pill">⚡ Launching Q3 2025</div>
+      <div class="trust-pill">📩 No spam</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-logo">
+    <div class="fl-n">N</div>
+    NexolPay
+  </div>
+  <div class="footer-tag">Your income. Your rules. Your future.<br>Built on Base · Made for Africa.</div>
+  <div class="footer-links">
+    <div class="footer-col">
+      <div class="fc-title">Product</div>
+      <a href="#features">Gift Card Redemption</a>
+      <a href="#features">Crypto Off-Ramp</a>
+      <a href="#features">Income Scheduler</a>
+      <a href="#features">NexolPay Vault</a>
+    </div>
+    <div class="footer-col">
+      <div class="fc-title">Company</div>
+      <a href="#">About</a>
+      <a href="#">Blog</a>
+      <a href="#">Careers</a>
+      <a href="#">Contact</a>
+    </div>
+    <div class="footer-col">
+      <div class="fc-title">Legal</div>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Cookies</a>
+    </div>
+  </div>
+  <div class="footer-div"></div>
+  <div class="footer-bot">
+    <div class="f-copy">NexolPay © 2025 · All rights reserved</div>
+    <div class="f-base">Built on <em>Base</em> · Powered by <em>Coinbase CDP</em></div>
+  </div>
+</footer>
+
+<script>
+// Nav
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => nav.classList.toggle('stuck', window.scrollY > 20), {passive:true});
+
+// Reveal
+const els = document.querySelectorAll('.reveal');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      const delay = parseInt(e.target.dataset.delay || 0);
+      setTimeout(() => e.target.classList.add('in'), delay);
+    }
+  });
+}, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+els.forEach(el => obs.observe(el));
+
+// Calculator
+const inp = document.getElementById('calcVal');
+function calc() {
+  const v = Math.max(0, parseFloat(inp.value) || 0);
+  const w = v / 4;
+  const f = n => '$' + n.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2});
+  ['w1','w2','w3','w4'].forEach(id => document.getElementById(id).textContent = f(w));
+}
+inp.addEventListener('input', calc);
+
+// Waitlist
+function joinWL() {
+  const email = document.getElementById('wlMail').value.trim();
+  const btn = document.getElementById('wlBtn');
+  const box = document.querySelector('.wl-form-box');
+  if (!email || !email.includes('@') || !email.includes('.')) {
+    box.style.borderColor = '#ff6b6b';
+    box.style.boxShadow = '0 0 0 4px rgba(255,107,107,0.12)';
+    setTimeout(() => { box.style.borderColor = ''; box.style.boxShadow = ''; }, 1800);
+    return;
+  }
+  btn.textContent = '✓ You\'re on the list!';
+  btn.style.background = 'linear-gradient(135deg, #00B674, #008F5A)';
+  document.getElementById('wlMail').value = '';
+  setTimeout(() => {
+    btn.textContent = 'Get Early Access →';
+    btn.style.background = '';
+  }, 4000);
+}
+document.getElementById('wlMail').addEventListener('keypress', e => { if (e.key === 'Enter') joinWL(); });
+</script>
+</body>
+</html>
